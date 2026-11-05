@@ -6,6 +6,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -14,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Transactional // roll back after the test so rows don't leak into other test classes
 class MedicationControllerTest {
 
     @Autowired
@@ -24,16 +26,18 @@ class MedicationControllerTest {
 
     @Test
     void getAllMedications() throws Exception {
-        medicationRepository.save(new Medication("Aspirin", "100mg"));
-        medicationRepository.save(new Medication("Metformin", "500mg"));
+        Medication aspirin = medicationRepository.save(new Medication("Aspirin", "100mg"));
+        Medication metformin = medicationRepository.save(new Medication("Metformin", "500mg"));
 
+        // Use the generated ids rather than hard-coding 1 and 2: the H2 database is shared by all
+        // test classes, and rolled-back inserts still advance its id sequence.
         mockMvc.perform(get("/medications"))
             .andExpect(status().isOk())
             .andExpect(content().json("""
                 [
-                    {"id": 1, "name": "Aspirin", "dosage": "100mg"},
-                    {"id": 2, "name": "Metformin", "dosage": "500mg"}
+                    {"id": %d, "name": "Aspirin", "dosage": "100mg"},
+                    {"id": %d, "name": "Metformin", "dosage": "500mg"}
                 ]
-                """));
+                """.formatted(aspirin.getId(), metformin.getId())));
     }
 }
