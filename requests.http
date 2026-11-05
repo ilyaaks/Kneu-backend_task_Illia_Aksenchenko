@@ -1,0 +1,96 @@
+# Example requests for the Prescriptions API.
+# Usage: install the VS Code "REST Client" extension (humao.rest-client),
+# start the app (./mvnw spring-boot:run), then click "Send Request" above any request.
+# Medications 1-5 are seeded by db/init.sql (1 = Aspirin, 2 = Metformin, ...).
+
+@baseUrl = http://localhost:8080
+
+### List medications (to see which ids exist)
+GET {{baseUrl}}/medications
+
+### Create a prescription -> 201 + Location header; label is trimmed
+# @name createPrescription
+POST {{baseUrl}}/prescriptions
+Content-Type: application/json
+
+{
+  "medicationId": 1,
+  "timeOfDay": "08:00",
+  "label": "  with breakfast  "
+}
+
+### Get the prescription just created (uses the id from the response above)
+GET {{baseUrl}}/prescriptions/{{createPrescription.response.body.id}}
+
+### Create another one, earlier in the day, without a label -> 201
+POST {{baseUrl}}/prescriptions
+Content-Type: application/json
+
+{
+  "medicationId": 2,
+  "timeOfDay": "07:30"
+}
+
+### List all prescriptions -> 200, sorted by timeOfDay
+GET {{baseUrl}}/prescriptions
+
+
+### ---------- Invalid input ----------
+
+### Duplicate (same medication + time as above) -> 409
+POST {{baseUrl}}/prescriptions
+Content-Type: application/json
+
+{
+  "medicationId": 1,
+  "timeOfDay": "08:00"
+}
+
+### Unknown medication -> 422
+POST {{baseUrl}}/prescriptions
+Content-Type: application/json
+
+{
+  "medicationId": 999,
+  "timeOfDay": "09:00"
+}
+
+### Missing required fields -> 400
+POST {{baseUrl}}/prescriptions
+Content-Type: application/json
+
+{}
+
+### Invalid time (hour out of range) -> 400
+POST {{baseUrl}}/prescriptions
+Content-Type: application/json
+
+{
+  "medicationId": 1,
+  "timeOfDay": "25:00"
+}
+
+### Invalid time format (seconds not allowed, strict HH:mm) -> 400
+POST {{baseUrl}}/prescriptions
+Content-Type: application/json
+
+{
+  "medicationId": 1,
+  "timeOfDay": "08:00:30"
+}
+
+### Label longer than 100 characters -> 400
+POST {{baseUrl}}/prescriptions
+Content-Type: application/json
+
+{
+  "medicationId": 1,
+  "timeOfDay": "10:00",
+  "label": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}
+
+### Prescription that does not exist -> 404
+GET {{baseUrl}}/prescriptions/999
+
+### Non-numeric id -> 400
+GET {{baseUrl}}/prescriptions/abc
