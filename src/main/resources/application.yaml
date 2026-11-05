@@ -1,0 +1,12 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kneu
+    username: kneu
+    password: kneu
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
