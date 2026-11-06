@@ -94,3 +94,13 @@ GET {{baseUrl}}/prescriptions/999
 
 ### Non-numeric id -> 400
 GET {{baseUrl}}/prescriptions/abc
+
+### New Prescription
+POST {{baseUrl}}/prescriptions
+Content-Type: application/json
+
+{
+  "medicationId": 3,
+  "timeOfDay": "08:00",
+  "label": "with breakfast"
+}
